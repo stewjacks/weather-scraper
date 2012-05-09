@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
+# Fuck your facebook stewart jackson
 """
 weather module
 
