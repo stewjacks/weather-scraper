@@ -66,7 +66,7 @@ class hourlyData:
 		
 		self.getData()
 	
-	def urlMaker(currentYear, currentMonth, currentDay):
+	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
 		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
@@ -81,50 +81,48 @@ class hourlyData:
 
 		
 			
-	def getData(check = False):
+	def getData(self, check = False):
 		
-		datestring = "%s-%s%s%s-%s%s%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
+		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
 		print "!Datestring: %s" % (datestring)
 		filename = self.dest + datestring + '.csv'
 		print "!Destination: %s" % (filename)
-		FILE = open(filename, "w")
+		# file(filename)
+		FILE = open('test.csv', "w")
 		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
-		
-		years = range(self.yearS, self.yearE)
-		months = range(1, 13)
-		years = [2011]
 		
 		list1 = []
 		
 		if self.yearE == self.yearS:
-			years = [self.yearE]
+			yearsAll = [self.yearE]
 		else:
-			years = range(self.yearS, self.yearE + 1)
+			yearsAll = range(self.yearS, self.yearE + 1)
 
-		for year in years:
-			if (self.yearS == self.yearE): #one year defined 
-				months = range(self.monthS, self.monthE + 1) #do the months specified
-			elif (year == self.yearE): #last year with defined end
-				months = range(1, self.monthE + 1)
-			else:
-				months = range(1, 13)
+		for year in yearsAll:
+			if self.yearS == self.yearE:
+				monthsAll = range(self.monthS, self.monthE + 1)
+			elif year == self.yearE:
+				monthsAll = range(1, self.monthE + 1)
+			else: 
+				monthsAll = range(1, 13)
+
 			
-			for month in months:
+			for month in monthsAll:
 				if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
-					days = range(self.dayS, self.dayE + 1)
+					daysAll = range(self.dayS, self.dayE + 1)
 				elif (year == self.yearE) and (month == self.monthE): #wrapping up
-					days = range(1, self.dayE + 1)
+					daysAll = range(1, self.dayE + 1)
 				else:
 					if month in [4, 6, 9, 11]:
-						days = range(1,31)
+						daysAll = range(1,31)
 					elif month == 2:
-						days = range(1,29)
+						daysAll = range(1,29)
 					else:
-						days = range(1,32)
+						daysAll = range(1,32)
 						
-				for day in days:
+				for day in daysAll:
 					l = []
-					url = urlMaker(year, month, day)
+					url = self.urlMaker(year, month, day)
 					print "!URL: %s" % (url)
 					
 					#go online
@@ -181,36 +179,52 @@ if __name__ == '__main__':
 		except ValueError:
 			print 'invalid year'
 		try:
-			monthS = raw_input('Start month: \n')
+			monthS = int(raw_input('Start month: \n'))
 		except ValueError:
 			print 'invalid month'
 			
 		try:
-			dayS = raw_input('Start day: \n')
+			dayS = int(raw_input('Start day: \n'))
 		except ValueError:
 			print 'invalid day'
 			
 		try:
-			yearE = raw_input('End year: \n')
+			yearE = int(raw_input('End year: \n'))
 			if yearE < yearS: 
 				raise ValueError
 		except ValueError:
 			print 'invalid year'
 			
 		try:
-			monthE = raw_input('End month: \n')
+			monthE = int(raw_input('End month: \n'))
 			if (yearE == yearS) and (monthE < monthS):
 				raise ValueError
 		except ValueError:
 			print 'invalid month'
 				
 		try:	
-			dayE = raw_input('End day: \n')
+			dayE = int(raw_input('End day: \n'))
 			if (dayE < dayS) and (monthE == monthS) and (yearE == yearS):
 				raise ValueError
 		except ValueError:
 			print 'invalid day'
-		
+
+		try:
+			saveLocation = str(raw_input('Save location (blank current directory) \n'))
+		except ValueError: #create regex to make sure this matches a directory location
+			print 'invalid location'
+	elif args[0] == 'debug':
+		name = 'CWTA'
+		yearS = 2010
+		monthS = 1
+		dayS = 1
+		yearE = 2010
+		monthE = 1
+		dayE = 2
+		saveLocation = '/Users/Stewart/.test/'
+
+
+
 		# break #replace this for some loop. 
 			##!Add some block against future values? 
 		
@@ -220,11 +234,5 @@ if __name__ == '__main__':
 	
 	
 	#start a new data collector process
-	data = hourlyData()
-	
-# class LessThanZero(Exception):
-# 	def __init__(self, value):
-# 		self.value = value
-# 	def __str__(self):
-# 		return repr(self.value)
+	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE)
 		
