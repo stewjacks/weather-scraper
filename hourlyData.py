@@ -70,7 +70,7 @@ class hourlyData:
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
 		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
-		if self.station == ('\w\w\w\w'):
+		if re.match(self.station,'^\w{4}$':
 			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html' %(self.station, currentYear, currentMonth, currentDay)
 		else:
 			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s' %(self.station, currentDay, currentYear, currentMonth)
