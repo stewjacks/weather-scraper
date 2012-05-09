@@ -70,7 +70,7 @@ class hourlyData:
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
 		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
-		if re.match(self.station,'^\w{4}$':
+		if re.match('^\w{4}$', self.station):
 			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html' %(self.station, currentYear, currentMonth, currentDay)
 		else:
 			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s' %(self.station, currentDay, currentYear, currentMonth)
@@ -138,19 +138,21 @@ class hourlyData:
 						title = table.findAll('th')
 						for th in title:
 							l1.append(th.text)
-						write.writerow(l2)
-						check == True
+						write.writerow(l1)
+						check = True
+					print check
 
 					#Data:
 					l = []	
 					rows = table.findAll('tr')
 					for tr in rows:
 						cols = tr.findAll('td')		
-						l = []
 						l.append('%d/%d/%d' %(year, month, day)) #add date to each row
+						print l
 
 						##Clean up the mess: could probably do this in a nicer way with a single regex
 						for td in cols:
+							print td.text
 							match1 = re.sub('&nbsp;&deg;C', '', td.text)
 							match1 = re.sub('Comma\sDelimited\sFile', '', match1)
 							match1 = re.sub('hPa','', match1)	
@@ -220,7 +222,7 @@ if __name__ == '__main__':
 		dayS = 1
 		yearE = 2010
 		monthE = 1
-		dayE = 2
+		dayE = 1
 		saveLocation = '/Users/Stewart/.test/'
 
 
