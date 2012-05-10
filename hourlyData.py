@@ -138,11 +138,10 @@ class hourlyData:
 						title = table.findAll('th')
 						for th in title:
 							l1.append(th.text)
-						write.writerow(l2)
+						write.writerow(l1)
 						check == True
 
 					#Data:
-					l = []	
 					rows = table.findAll('tr')
 					for tr in rows:
 						cols = tr.findAll('td')		
@@ -213,6 +212,7 @@ if __name__ == '__main__':
 			saveLocation = str(raw_input('Save location (blank current directory) \n'))
 		except ValueError: #create regex to make sure this matches a directory location
 			print 'invalid location'
+
 	elif args[0] == 'debug':
 		name = 'CWTA'
 		yearS = 2010
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 		dayS = 1
 		yearE = 2010
 		monthE = 1
-		dayE = 2
+		dayE = 1
 		saveLocation = '/Users/Stewart/.test/'
 
 
