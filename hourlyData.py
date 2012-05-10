@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-# sam is gay
 """
 weather module
 
@@ -82,17 +81,7 @@ class hourlyData:
 		
 			
 	def getData(self, check = False):
-		
-		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
-		print "!Datestring: %s" % (datestring)
-		filename = self.dest + datestring + '.csv'
-		print "!Destination: %s" % (filename)
-		# file(filename)
-		FILE = open('test.csv', "w")
-		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
-		
-		list1 = []
-		
+		l = []
 		if self.yearE == self.yearS:
 			yearsAll = [self.yearE]
 		else:
@@ -121,7 +110,6 @@ class hourlyData:
 						daysAll = range(1,32)
 						
 				for day in daysAll:
-					l = []
 					url = self.urlMaker(year, month, day)
 					print "!URL: %s" % (url)
 					
@@ -132,28 +120,27 @@ class hourlyData:
 
 					#Title: do this once 
 					table = soup.find('table', id="obsTable")
-					if check == False: #Throw a title on the CSV the first time around
+					#Throw a title on the CSV the first time around unless otherwise specified
+					
+					if check == False:
 						l1 = []
 						l1.append('date')
 						title = table.findAll('th')
 						for th in title:
 							l1.append(th.text)
-						write.writerow(l1)
-<<<<<<< HEAD
+
+						l.append(l1)
 						check = True
-					print check
-=======
-						check == True
->>>>>>> dev
 
 					#Data:
 					rows = table.findAll('tr')
 					for tr in rows:
+						l2 = []
 						cols = tr.findAll('td')		
-						l.append('%d/%d/%d' %(year, month, day)) #add date to each row
-						print l
+						l2.append('%d/%d/%d' %(year, month, day)) #add date to each row
+						raw_input('End year: \n')
 
-						##Clean up the mess: could probably do this in a nicer way with a single regex
+						##Clean up the mess: could probably do this in a nicer way with a better regex
 						for td in cols:
 							print td.text
 							match1 = re.sub('&nbsp;&deg;C', '', td.text)
@@ -163,10 +150,25 @@ class hourlyData:
 							match1 = re.sub('km/h','', match1)
 							match1 = re.sub('mm', '', match1)
 							match1 = re.sub('%', '', match1)
-							l.append(match1)
+							l2.append(match1)
 
-						write.writerow(l)
-		
+						if len(l2) > 3:
+							l.append(l2)
+		self.csvtool(l)
+
+	def csvtool(self, list1):
+		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
+		print "!Datestring: %s" % (datestring)
+		filename = self.dest + datestring + '.csv'
+		print "!Destination: %s" % (filename)
+
+		# file(filename)
+		FILE = open('test.csv', "w")
+		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
+
+		for line in list1:
+			write.writerow(line)
+
 
 if __name__ == '__main__':
 	(op, (options, args)) = get_options()
