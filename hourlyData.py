@@ -139,11 +139,14 @@ class hourlyData:
 						for th in title:
 							l1.append(th.text)
 						write.writerow(l1)
+<<<<<<< HEAD
 						check = True
 					print check
+=======
+						check == True
+>>>>>>> dev
 
 					#Data:
-					l = []	
 					rows = table.findAll('tr')
 					for tr in rows:
 						cols = tr.findAll('td')		
@@ -215,6 +218,7 @@ if __name__ == '__main__':
 			saveLocation = str(raw_input('Save location (blank current directory) \n'))
 		except ValueError: #create regex to make sure this matches a directory location
 			print 'invalid location'
+
 	elif args[0] == 'debug':
 		name = 'CWTA'
 		yearS = 2010
