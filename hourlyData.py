@@ -76,9 +76,6 @@ class hourlyData:
 		
 		return urlbase	
 		#now make the dates work nicely.
-		 
-
-		
 			
 	def getData(self, check = False):
 		l = []
