@@ -16,7 +16,10 @@ import socket
 import re
 import optparse
 
-from BeautifulSoup import BeautifulStoneSoup
+try:
+	from BeautifulSoup import BeautifulStoneSoup
+except:
+	from bs4 import BeautifulStoneSoup
 
 VERSION = "1.0"
 REPO_VERSION = "1.0"
@@ -80,13 +83,14 @@ class hourlyData:
 			
 	def getData(self, check = False):
 		l = []
+		check = False
 		if self.yearE == self.yearS:
 			yearsAll = [self.yearE]
 		else:
 			yearsAll = range(self.yearS, self.yearE + 1)
 
 		for year in yearsAll:
-			if operation == 'yearly':
+			if self.operation == 'yearly':
 				print 'make yearly already...'
 #Make YEARLY
 			else:
@@ -100,7 +104,7 @@ class hourlyData:
 				
 				for month in monthsAll:
 
-					if operation == 'monthly':
+					if self.operation == 'monthly':
 						print 'make monthly already...'
 
 #make monthly segment
@@ -141,7 +145,9 @@ class hourlyData:
 									l1.append(th.text)
 
 								l.append(l1)
+								print check
 								check = True
+								print check
 
 							#Data:
 							rows = table.findAll('tr')
@@ -277,9 +283,11 @@ if __name__ == '__main__':
 		saveLocation = '/Users/Stewart/.test/'
 
 	
-	#start a new data collector process
-	try:
-		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, args[0])
-	except NameError:
-		print "invalid option, see usage: \n "
-		op.print_usage()
+	#start a new data collector process\
+	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
+	
+	# try:
+	# 	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
+	# except NameError:
+	# 	print "invalid option, see usage: \n "
+	# 	op.print_usage()
