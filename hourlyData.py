@@ -284,10 +284,10 @@ if __name__ == '__main__':
 
 	
 	#start a new data collector process\
-	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
+	# data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
 	
-	# try:
-	# 	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
-	# except NameError:
-	# 	print "invalid option, see usage: \n "
-	# 	op.print_usage()
+	try:
+		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
+	except NameError:
+		print "invalid option, see usage: \n "
+		op.print_usage()
