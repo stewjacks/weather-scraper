@@ -171,7 +171,7 @@ class hourlyData:
 
 										if len(l2) > 3:
 											l.append(l2)
-								break
+									break
 								except:
 									print 'error in loop'
 
