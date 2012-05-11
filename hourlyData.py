@@ -176,11 +176,13 @@ class hourlyData:
 	def csvtool(self, list1):
 		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
 		print "!Datestring: %s" % (datestring)
-		filename = self.dest + datestring + '.csv'
+		# filename = self.dest + datestring + '.csv'
+		filename = str(self.station + '.csv')
 		print "!Destination: %s" % (filename)
 
 		# file(filename)
-		FILE = open('test.csv', "w")
+
+		FILE = open(filename, "w")
 		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
 
 		for line in list1:
