@@ -28,11 +28,11 @@ def get_options():
 If you want to use it just run ./%prog data.
     
 Commands:
-  Hourly - 
-  Daily -
-  Weekly -
-  Monthly -
-  Yearly - """
+  hourly - 
+  daily -
+  weekly -
+  monthly -
+  yearly - """
   
     op = optparse.OptionParser(version='%prog ' + VERSION, usage = usage)
     op.add_option('-b', '--branch',
@@ -53,7 +53,7 @@ Commands:
 
 
 class hourlyData:
-	def __init__(self, filepath, station, yearS, monthS, dayS, yearE, monthE, dayE):
+	def __init__(self, filepath, station, yearS, monthS, dayS, yearE, monthE, dayE, operation):
 		self.station = station
 		self.dest = filepath
 		self.yearS = yearS
@@ -62,12 +62,13 @@ class hourlyData:
 		self.yearE = yearE
 		self.monthE = monthE
 		self.dayE = dayE
+		self.operation = operation
 		
 		self.getData()
 	
 	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
-		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
+		#http://writeroww.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
 		if re.match('^\w{4}$', self.station):
 			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html' %(self.station, currentYear, currentMonth, currentDay)
@@ -85,72 +86,85 @@ class hourlyData:
 			yearsAll = range(self.yearS, self.yearE + 1)
 
 		for year in yearsAll:
-			if self.yearS == self.yearE:
-				monthsAll = range(self.monthS, self.monthE + 1)
-			elif year == self.yearE:
-				monthsAll = range(1, self.monthE + 1)
-			else: 
-				monthsAll = range(1, 13)
+			if operation == 'yearly':
+				print 'make yearly already...'
+#Make YEARLY
+			else:
+				if self.yearS == self.yearE:
+					monthsAll = range(self.monthS, self.monthE + 1)
+				elif year == self.yearE:
+					monthsAll = range(1, self.monthE + 1)
+				else: 
+					monthsAll = range(1, 13)
 
-			
-			for month in monthsAll:
-				if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
-					daysAll = range(self.dayS, self.dayE + 1)
-				elif (year == self.yearE) and (month == self.monthE): #wrapping up
-					daysAll = range(1, self.dayE + 1)
-				else:
-					if month in [4, 6, 9, 11]:
-						daysAll = range(1,31)
-					elif month == 2:
-						daysAll = range(1,29)
+				
+				for month in monthsAll:
+
+					if operation == 'monthly':
+						print 'make monthly already...'
+
+#make monthly segment
+
 					else:
-						daysAll = range(1,32)
-						
-				for day in daysAll:
-					url = self.urlMaker(year, month, day)
-					print "!URL: %s" % (url)
-					
-					#go online
-					resp = urllib2.urlopen(url)
-					html = resp.read()
-					soup = BeautifulStoneSoup(html)
+						if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
+							daysAll = range(self.dayS, self.dayE + 1)
+						elif (year == self.yearE) and (month == self.monthE): #wrapping up
+							daysAll = range(1, self.dayE + 1)
+						else:
+							if month in [4, 6, 9, 11]:
+								daysAll = range(1,31)
+							elif month == 2:
+								daysAll = range(1,29)
+							else:
+								daysAll = range(1,32)
+								
+						for day in daysAll:
+							url = self.urlMaker(year, month, day)
+							print "!URL: %s" % (url)
+							
+							#go online
+							resp = urllib2.urlopen(url)
+							html = resp.read()
+							soup = BeautifulStoneSoup(html)
 
-					#Title: do this once 
-					table = soup.find('table', id="obsTable")
-					#Throw a title on the CSV the first time around unless otherwise specified
-					
-					if check == False:
-						l1 = []
-						l1.append('date')
-						title = table.findAll('th')
-						for th in title:
-							l1.append(th.text)
+#THIS IS WHERE DAILY AND HOURLY SPLIT. MAKE DAILY
 
-						l.append(l1)
-						check = True
+							#Title: do this once 
+							table = soup.find('table', id="obsTable")
+							#Throw a title on the CSV the first time around unless otherwise specified
+							
+							if check == False:
+								l1 = []
+								l1.append('date')
+								title = table.findAll('th')
+								for th in title:
+									l1.append(th.text)
 
-					#Data:
-					rows = table.findAll('tr')
-					for tr in rows:
-						l2 = []
-						cols = tr.findAll('td')		
-						l2.append('%d/%d/%d' %(year, month, day)) #add date to each row
-						raw_input('End year: \n')
+								l.append(l1)
+								check = True
 
-						##Clean up the mess: could probably do this in a nicer way with a better regex
-						for td in cols:
-							print td.text
-							match1 = re.sub('&nbsp;&deg;C', '', td.text)
-							match1 = re.sub('Comma\sDelimited\sFile', '', match1)
-							match1 = re.sub('hPa','', match1)	
-							match1 = re.sub('&nbsp;','', match1)
-							match1 = re.sub('km/h','', match1)
-							match1 = re.sub('mm', '', match1)
-							match1 = re.sub('%', '', match1)
-							l2.append(match1)
+							#Data:
+							rows = table.findAll('tr')
+							for tr in rows:
+								l2 = []
+								cols = tr.findAll('td')		
+								l2.append('%d/%d/%d' %(year, month, day)) #add date to each row
 
-						if len(l2) > 3:
-							l.append(l2)
+								##Clean up the mess: could probably do this in a nicer way with a better regex
+								for td in cols:
+									match1 = re.sub('&nbsp;&deg;C', '', td.text)
+									match1 = re.sub('Comma\sDelimited\sFile', '', match1)
+									match1 = re.sub('hPa','', match1)	
+									match1 = re.sub('&nbsp;','', match1)
+									match1 = re.sub('km/h','', match1)
+									match1 = re.sub('mm', '', match1)
+									match1 = re.sub('%', '', match1)
+									l2.append(match1)
+
+								if len(l2) > 3:
+									l.append(l2)
+
+
 		self.csvtool(l)
 
 	def csvtool(self, list1):
@@ -172,51 +186,85 @@ if __name__ == '__main__':
 	if len(args) < 1: #Could have input for date and station here in one string or a list as below
 		op.print_usage()
 	
-	if args[0] == 'hourly':
-		try:
-			name = str(raw_input('Input station ID: \n'))
-		except ValueError:
-			print 'invalid id'
-			
-		try:
-			yearS = int(raw_input('Start year: \n'))
-		except ValueError:
-			print 'invalid year'
-		try:
-			monthS = int(raw_input('Start month: \n'))
-		except ValueError:
-			print 'invalid month'
-			
-		try:
-			dayS = int(raw_input('Start day: \n'))
-		except ValueError:
-			print 'invalid day'
-			
-		try:
-			yearE = int(raw_input('End year: \n'))
-			if yearE < yearS: 
-				raise ValueError
-		except ValueError:
-			print 'invalid year'
-			
-		try:
-			monthE = int(raw_input('End month: \n'))
-			if (yearE == yearS) and (monthE < monthS):
-				raise ValueError
-		except ValueError:
-			print 'invalid month'
-				
-		try:	
-			dayE = int(raw_input('End day: \n'))
-			if (dayE < dayS) and (monthE == monthS) and (yearE == yearS):
-				raise ValueError
-		except ValueError:
-			print 'invalid day'
+	if args[0] in ['hourly', 'daily', 'weekly', 'monthly', 'yearly']:
 
-		try:
-			saveLocation = str(raw_input('Save location (blank current directory) \n'))
-		except ValueError: #create regex to make sure this matches a directory location
-			print 'invalid location'
+		while True:
+			try:
+				name = str(raw_input('Input station ID: \n'))
+				break
+			except ValueError:
+				print 'invalid id'
+
+		while True:	
+			try:
+				yearS = int(raw_input('Start year: \n'))
+				if re.match('^\d{4}$', str(yearS)):
+					break
+				else: raise ValueError	
+			except ValueError:
+				print 'invalid year'
+
+	if args[0] in ['hourly', 'daily', 'weekly', 'monthly']:			
+		while True:
+			try:
+				monthS = int(raw_input('Start month: \n'))
+				if monthS <= 12 and monthS > 0 :
+					break
+				else: raise ValueError
+			except ValueError:
+				print 'invalid month'
+
+	if args[0] in ['hourly', 'daily', 'weekly']:			
+		while True:		
+			try:
+				dayS = int(raw_input('Start day: \n'))
+				if ((dayS <= 30 and monthS in [4, 6, 9, 11]) or (dayS <= 29 and monthS == 2) or (dayS <= 31 and monthS in [1, 3, 5, 7, 8, 10, 12])):
+					break
+				else: raise ValueError
+			except ValueError:
+				print 'invalid day'
+
+	if args[0] in ['hourly', 'daily', 'weekly', 'monthly', 'yearly']:
+		while True:		
+			try:
+				yearE = int(raw_input('End year: \n'))
+				if yearE >= yearS and re.match('^\d{4}$', str(yearE)): 
+					break
+				else: raise ValueError
+			except ValueError:
+				print 'invalid year'
+
+	if args[0] in ['hourly', 'daily', 'weekly', 'monthly']:
+		while True:		
+			try:
+				monthE = int(raw_input('End month: \n'))
+				if (yearE == yearS) and (monthE < monthS):
+					raise ValueError
+				elif monthE <= 12 and monthE > 0:
+					break
+				else: raise ValueError
+			except ValueError:
+				print 'invalid month'
+
+	if args[0] in ['hourly', 'daily', 'weekly']:
+		while True:			
+			try:	
+				dayE = int(raw_input('End day: \n'))
+				if ((dayE < dayS) and (monthE == monthS) and (yearE == yearS)):
+					raise ValueError
+				elif (dayE <= 30 and monthE in [4, 6, 9, 11]) or (dayE <= 29 and monthE == 2) or (dayE <= 31 and monthE in [1, 3, 5, 7, 8, 10, 12]):
+					break
+				else: raise ValueError
+			except ValueError:
+				print 'invalid day'
+
+	if args[0] in ['hourly', 'daily', 'weekly', 'monthly', 'yearly']:
+		while True:
+			try:
+				saveLocation = str(raw_input('Save location (blank current directory) \n'))
+				break
+			except ValueError: #create regex/sys to make sure this matches a directory location
+				print 'invalid location'
 
 	elif args[0] == 'debug':
 		name = 'CWTA'
@@ -225,19 +273,13 @@ if __name__ == '__main__':
 		dayS = 1
 		yearE = 2010
 		monthE = 1
-		dayE = 1
+		dayE = 10
 		saveLocation = '/Users/Stewart/.test/'
 
-
-
-		# break #replace this for some loop. 
-			##!Add some block against future values? 
-		
-	else:
-		print "invalid option, see usage: \n "
-		op.print_usage()
-	
 	
 	#start a new data collector process
-	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE)
-		
+	try:
+		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, args[0])
+	except NameError:
+		print "invalid option, see usage: \n "
+		op.print_usage()
