@@ -127,48 +127,53 @@ class hourlyData:
 							print "!URL: %s" % (url)
 							
 							#go online
-							resp = urllib2.urlopen(url)
-							html = resp.read()
-							soup = BeautifulStoneSoup(html)
+							while True:
+								try:
+									resp = urllib2.urlopen(url)
+									html = resp.read()
+									soup = BeautifulStoneSoup(html)
 
-#THIS IS WHERE DAILY AND HOURLY SPLIT. MAKE DAILY
+		#THIS IS WHERE DAILY AND HOURLY SPLIT. MAKE DAILY
 
-							#Title: do this once 
-							table = soup.find('table', id="obsTable")
-							#Throw a title on the CSV the first time around unless otherwise specified
-							
-							if check == False:
-								l1 = []
-								l1.append('date')
-								title = table.findAll('th')
-								for th in title:
-									l1.append(th.text)
+									#Title: do this once 
+									table = soup.find('table', id="obsTable")
+									#Throw a title on the CSV the first time around unless otherwise specified
+									
+									if check == False:
+										l1 = []
+										l1.append('date')
+										title = table.findAll('th')
+										for th in title:
+											l1.append(th.text)
 
-								l.append(l1)
-								print check
-								check = True
-								print check
+										l.append(l1)
+										print check
+										check = True
+										print check
 
-							#Data:
-							rows = table.findAll('tr')
-							for tr in rows:
-								l2 = []
-								cols = tr.findAll('td')		
-								l2.append('%d/%d/%d' %(year, month, day)) #add date to each row
+									#Data:
+									rows = table.findAll('tr')
+									for tr in rows:
+										l2 = []
+										cols = tr.findAll('td')		
+										l2.append('%d/%d/%d' %(year, month, day)) #add date to each row
 
-								##Clean up the mess: could probably do this in a nicer way with a better regex
-								for td in cols:
-									match1 = re.sub('&nbsp;&deg;C', '', td.text)
-									match1 = re.sub('Comma\sDelimited\sFile', '', match1)
-									match1 = re.sub('hPa','', match1)	
-									match1 = re.sub('&nbsp;','', match1)
-									match1 = re.sub('km/h','', match1)
-									match1 = re.sub('mm', '', match1)
-									match1 = re.sub('%', '', match1)
-									l2.append(match1)
+										##Clean up the mess: could probably do this in a nicer way with a better regex
+										for td in cols:
+											match1 = re.sub('&nbsp;&deg;C', '', td.text)
+											match1 = re.sub('Comma\sDelimited\sFile', '', match1)
+											match1 = re.sub('hPa','', match1)	
+											match1 = re.sub('&nbsp;','', match1)
+											match1 = re.sub('km/h','', match1)
+											match1 = re.sub('mm', '', match1)
+											match1 = re.sub('%', '', match1)
+											l2.append(match1)
 
-								if len(l2) > 3:
-									l.append(l2)
+										if len(l2) > 3:
+											l.append(l2)
+								break
+								except:
+									print 'error in loop'
 
 
 		self.csvtool(l)
