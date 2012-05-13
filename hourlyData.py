@@ -177,6 +177,7 @@ class hourlyData:
 
 
 		self.csvtool(l)
+		self.cleanup(l)
 
 	def csvtool(self, list1):
 		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
@@ -192,6 +193,25 @@ class hourlyData:
 
 		for line in list1:
 			write.writerow(line)
+
+#pop functionality not working so figure this out
+	def cleanup(self, list1):
+		count = 0
+		hOld = ''
+		listTemp = list1
+
+		print list1
+		for row in list1:
+			count = count + 1
+			h = re.findall('^\d{1,2}', row[1])
+			print h
+			if h == hOld:
+				list1.pop(count - 1)
+			hOld = h
+		print '************** \n'
+		print list1
+			
+
 
 
 if __name__ == '__main__':
@@ -280,13 +300,13 @@ if __name__ == '__main__':
 				print 'invalid location'
 
 	elif args[0] == 'debug':
-		name = 'CWTA'
-		yearS = 2010
+		name = 'MC7533'
+		yearS = 2011
 		monthS = 1
 		dayS = 1
-		yearE = 2010
+		yearE = 2011
 		monthE = 1
-		dayE = 10
+		dayE = 2
 		saveLocation = '/Users/Stewart/.test/'
 
 	
