@@ -56,7 +56,7 @@ Commands:
 
 
 class hourlyData:
-	def __init__(self, filepath, station, yearS, monthS, dayS, yearE, monthE, dayE, operation):
+	def __init__(self, filepath, station, yearS, monthS, dayS, yearE, monthE, dayE, operation, mode):
 		self.station = station
 		self.dest = filepath
 		self.yearS = yearS
@@ -66,6 +66,7 @@ class hourlyData:
 		self.monthE = monthE
 		self.dayE = dayE
 		self.operation = operation
+		self.mode = mode
 		
 		self.getData()
 	
@@ -199,21 +200,31 @@ class hourlyData:
 		count = 0
 		hOld = ''
 		listTemp = []
+# Take the last per hour 
+		if mode == 'last'
+			for row in list1:
+				count = count + 1
+				h = re.findall('^\d{1,2}', row[1])
+				listTemp.append(row)
+				if str(h) == str(hOld):
+					count = count - 1 
+					listTemp.pop(count)
+					print 'popped \n'
+				hOld = h
+#take the first per hour
+		elif mode == 'first'
+			for row in list1:
+				count = count + 1
+				h = re.findall('^\d{1,2}', row[1])
+				listTemp.append(row)
+				if str(h) == str(hOld):
+					listTemp.pop(count)
+					count = count - 1
+					print 'popped \n'
+				hOld = h
 
-		print list1
-		for row in list1:
-			count = count + 1
-			h = re.findall('^\d{1,2}', row[1])
-			print h
-			listTemp.append(row)
-			if str(h) == str(hOld):
-				count = count - 1 
-				listTemp.pop(count)
-				print 'popped \n'
-			hOld = h
-		print '************** \n'
-		print listTemp
-			
+		return listTemp
+
 
 
 
@@ -297,6 +308,9 @@ if __name__ == '__main__':
 	if args[0] in ['hourly', 'daily', 'weekly', 'monthly', 'yearly']:
 		while True:
 			try:
+				mode = str(raw_input('Style of parsing (first, last, or blank for all) \name'))
+		while True:
+			try:
 				saveLocation = str(raw_input('Save location (blank current directory) \n'))
 				break
 			except ValueError: #create regex/sys to make sure this matches a directory location
@@ -311,13 +325,10 @@ if __name__ == '__main__':
 		monthE = 1
 		dayE = 1
 		saveLocation = '/Users/Stewart/.test/'
+		mode = 'first'
 
-	
-	#start a new data collector process\
-	# data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
-	
 	try:
-		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]))
+		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]), mode)
 	except NameError:
 		print "invalid option, see usage: \n "
 		op.print_usage()
