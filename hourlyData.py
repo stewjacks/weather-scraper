@@ -200,8 +200,11 @@ class hourlyData:
 		count = 0
 		hOld = ''
 		listTemp = []
+
+		print list1
+		print "############ \n"
 # Take the last per hour 
-		if mode == 'last'
+		if mode == 'last':
 			for row in list1:
 				count = count + 1
 				h = re.findall('^\d{1,2}', row[1])
@@ -212,16 +215,17 @@ class hourlyData:
 					print 'popped \n'
 				hOld = h
 #take the first per hour
-		elif mode == 'first'
+		elif mode == 'first':
 			for row in list1:
-				count = count + 1
 				h = re.findall('^\d{1,2}', row[1])
 				listTemp.append(row)
 				if str(h) == str(hOld):
 					listTemp.pop(count)
-					count = count - 1
+				else:
+					count = count + 1
 					print 'popped \n'
 				hOld = h
+		print listTemp
 
 		return listTemp
 
@@ -309,6 +313,9 @@ if __name__ == '__main__':
 		while True:
 			try:
 				mode = str(raw_input('Style of parsing (first, last, or blank for all) \name'))
+				break
+			except ValueError: 
+				print 'invalid mode choice'
 		while True:
 			try:
 				saveLocation = str(raw_input('Save location (blank current directory) \n'))
@@ -317,7 +324,7 @@ if __name__ == '__main__':
 				print 'invalid location'
 
 	elif args[0] == 'debug':
-		name = 'MC7533'
+		name = 'CWTA'
 		yearS = 2011
 		monthS = 1
 		dayS = 1
