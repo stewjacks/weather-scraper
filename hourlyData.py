@@ -198,18 +198,21 @@ class hourlyData:
 	def cleanup(self, list1):
 		count = 0
 		hOld = ''
-		listTemp = list1
+		listTemp = []
 
 		print list1
 		for row in list1:
 			count = count + 1
 			h = re.findall('^\d{1,2}', row[1])
 			print h
-			if h == hOld:
-				list1.pop(count - 1)
+			listTemp.append(row)
+			if str(h) == str(hOld):
+				count = count - 1 
+				listTemp.pop(count)
+				print 'popped \n'
 			hOld = h
 		print '************** \n'
-		print list1
+		print listTemp
 			
 
 
@@ -306,7 +309,7 @@ if __name__ == '__main__':
 		dayS = 1
 		yearE = 2011
 		monthE = 1
-		dayE = 2
+		dayE = 1
 		saveLocation = '/Users/Stewart/.test/'
 
 	
