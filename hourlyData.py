@@ -15,6 +15,7 @@ import csv
 import socket
 import re
 import optparse
+import HTMLParser
 
 try:
 	from BeautifulSoup import BeautifulStoneSoup
@@ -67,21 +68,100 @@ class hourlyData:
 		self.dayE = dayE
 		self.operation = operation
 		self.mode = mode
-		
-		self.getData()
-	
+		self.getData1()
+
 	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
 		#http://writeroww.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
 		if re.match('^\w{4}$', self.station):
-			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html' %(self.station, currentYear, currentMonth, currentDay)
+			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html?format=1' %(self.station, currentYear, currentMonth, currentDay)
 		else:
-			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s' %(self.station, currentDay, currentYear, currentMonth)
+			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s&format=1' %(self.station, currentDay, currentYear, currentMonth)
+		return urlbase
+
+	def getData1(self, check = False):
+		l = []
+		check = False
+		if self.yearE == self.yearS:
+			yearsAll = [self.yearE]
+		else:
+			yearsAll = range(self.yearS, self.yearE + 1)
+
+		for year in yearsAll:
 		
-		return urlbase	
-		#now make the dates work nicely.
+			if self.yearS == self.yearE:
+				monthsAll = range(self.monthS, self.monthE + 1)
+			elif year == self.yearE:
+				monthsAll = range(1, self.monthE + 1)
+			else: 
+				monthsAll = range(1, 13)
+
 			
+			for month in monthsAll:
+
+				if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
+					daysAll = range(self.dayS, self.dayE + 1)
+				elif (year == self.yearE) and (month == self.monthE): #wrapping up
+					daysAll = range(1, self.dayE + 1)
+				else:
+					if month in [4, 6, 9, 11]:
+						daysAll = range(1,31)
+					elif month == 2:
+						daysAll = range(1,29)
+					else:
+						daysAll = range(1,32)
+						
+				for day in daysAll:
+					url = self.urlMaker(year, month, day)
+					print "!URL: %s" % (url)
+					
+					#go online
+					while True:
+						try:
+							resp = urllib2.urlopen(url)
+							html = resp.read()
+
+							# print soup
+							break
+						except:
+							print 'error'
+					print html
+					if re.search('<br>', html):
+						p = re.split(',\n<br>|<br>', html)
+					elif re.search('<br />', html):
+						p = re.split('<br />', p)
+
+					pp = []
+
+					for thing in p:
+						p1 = re.sub('\n', '', thing)
+						p2 = re.split(',', p1)
+						if p2 != ['']:
+							pp.append(p2)
+							# print '%s' % (p2)
+					if check == True:
+						g = len(pp[0])
+						h = l[0]
+						
+						print g
+						print len(h[0])
+						if len(pp[0]) == len(h[0]):
+
+							print 'len problem'
+							pp.pop(0)
+							l.append(pp)
+						else: l.append(pp) 
+					
+					elif check == False:
+						l.append(pp)
+						check = True
+		self.csvtool(l)
+							# print pp
+#This works with HTML directly from the weatherunderground historial page.
+#This will be used for daily, weekly, monthly and yearly formats
+#Currently it is configured for hourly, but this functionality has been depreciated since using CSV is much cleaner 
+
 	def getData(self, check = False):
 		l = []
 		check = False
@@ -176,9 +256,8 @@ class hourlyData:
 								except:
 									print 'error in loop'
 
-
+		l = self.cleanup(l)
 		self.csvtool(l)
-		self.cleanup(l)
 
 	def csvtool(self, list1):
 		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
@@ -193,7 +272,10 @@ class hourlyData:
 		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
 
 		for line in list1:
-			write.writerow(line)
+			for l1 in line:
+				# print l1
+				# print "*******"
+				write.writerow(l1)
 
 #pop functionality not working so figure this out
 	def cleanup(self, list1):
@@ -203,6 +285,7 @@ class hourlyData:
 
 		print list1
 		print "############ \n"
+#ADD A PRECIPITATION PARSER
 # Take the last per hour 
 		if mode == 'last':
 			for row in list1:
@@ -324,13 +407,13 @@ if __name__ == '__main__':
 				print 'invalid location'
 
 	elif args[0] == 'debug':
-		name = 'CWTA'
+		name = 'IQCMONTR7'
 		yearS = 2011
 		monthS = 1
 		dayS = 1
 		yearE = 2011
 		monthE = 1
-		dayE = 1
+		dayE = 31
 		saveLocation = '/Users/Stewart/.test/'
 		mode = 'first'
 
