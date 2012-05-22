@@ -17,10 +17,7 @@ import re
 import optparse
 import HTMLParser
 
-try:
-	from BeautifulSoup import BeautifulStoneSoup
-except:
-	from bs4 import BeautifulStoneSoup
+from BeautifulSoup import BeautifulStoneSoup
 
 VERSION = "1.0"
 REPO_VERSION = "1.0"
@@ -68,12 +65,16 @@ class hourlyData:
 		self.dayE = dayE
 		self.operation = operation
 		self.mode = mode
+
 		self.getData1()
 
 	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
-		#http://writeroww.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
+		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
+
+		#http://api.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MAS947&month=5&day=11&year=2012&format=XML !!!!!!!
+
 		if re.match('^\w{4}$', self.station):
 			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html?format=1' %(self.station, currentYear, currentMonth, currentDay)
 		else:
@@ -121,11 +122,9 @@ class hourlyData:
 						try:
 							resp = urllib2.urlopen(url)
 							html = resp.read()
-
-							# print soup
 							break
 						except:
-							print 'error'
+							print 'error with url - check connection?'
 					print html
 					if re.search('<br>', html):
 						p = re.split(',\n<br>|<br>', html)
@@ -137,34 +136,32 @@ class hourlyData:
 					for thing in p:
 						p1 = re.sub('\n', '', thing)
 						p2 = re.split(',', p1)
+
 						if p2 != ['']:
 							pp.append(p2)
 							# print '%s' % (p2)
-					if check == True:
-						g = len(pp[0])
-						h = l[0]
-						
-						print g
-						print len(h[0])
-						if len(pp[0]) == len(h[0]):
 
-							print 'len problem'
+					if check == True:
+						h = l[0]
+
+						if len(pp[0]) == len(h[0]):
 							pp.pop(0)
-							l.append(pp)
-						else: l.append(pp) 
-					
-					elif check == False:
-						l.append(pp)
+
+					else:
 						check = True
-		self.csvtool(l)
+					l.append(pp)
+		self.pparse(l)
+		# self.csvtool(l)
 							# print pp
 #This works with HTML directly from the weatherunderground historial page.
 #This will be used for daily, weekly, monthly and yearly formats
 #Currently it is configured for hourly, but this functionality has been depreciated since using CSV is much cleaner 
 
-	def getData(self, check = False):
-		l = []
-		check = False
+	def getDataXML(self, check = False):
+		l
+
+	def getData(self, check = False, l = []):
+		
 		if self.yearE == self.yearS:
 			yearsAll = [self.yearE]
 		else:
@@ -277,14 +274,25 @@ class hourlyData:
 				# print "*******"
 				write.writerow(l1)
 
-#pop functionality not working so figure this out
-	def cleanup(self, list1):
-		count = 0
-		hOld = ''
-		listTemp = []
+	def pparse(self, list1, count = 0, hOld = '', listTemp = []): #THIS DOES NOT WORK!!!!!!!
+		s = list1[0]
+		re.IGNORECASE
+		
+		for cell in s[0]:
+			# print cell
+			m = re.search('Precip', str(cell))
+			print m
+			if m is not None:
+				break
+			count = count + 1
+		print count
 
+
+#pop functionality not working so figure this out
+	def cleanup(self, list1, count = 0, hOld = '', listTemp = []):
 		print list1
 		print "############ \n"
+
 #ADD A PRECIPITATION PARSER
 # Take the last per hour 
 		if mode == 'last':
@@ -310,8 +318,7 @@ class hourlyData:
 				hOld = h
 		print listTemp
 
-		return listTemp
-
+		return listTemp 
 
 
 
@@ -413,7 +420,7 @@ if __name__ == '__main__':
 		dayS = 1
 		yearE = 2011
 		monthE = 1
-		dayE = 31
+		dayE = 3
 		saveLocation = '/Users/Stewart/.test/'
 		mode = 'first'
 
