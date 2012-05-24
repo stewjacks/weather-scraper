@@ -15,9 +15,15 @@ import csv
 import socket
 import re
 import optparse
+
 import HTMLParser
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 from BeautifulSoup import BeautifulStoneSoup
+
 
 VERSION = "1.0"
 REPO_VERSION = "1.0"
@@ -66,7 +72,7 @@ class hourlyData:
 		self.operation = operation
 		self.mode = mode
 
-		self.getData1()
+		self.getDataXML()
 
 	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
@@ -114,51 +120,134 @@ class hourlyData:
 						daysAll = range(1,32)
 						
 				for day in daysAll:
-					url = self.urlMaker(year, month, day)
+					(url, data) = self.xmlMaker(year, month, day)
 					print "!URL: %s" % (url)
+					l.append(data)
 					
-					#go online
-					while True:
-						try:
-							resp = urllib2.urlopen(url)
-							html = resp.read()
-							break
-						except:
-							print 'error with url - check connection?'
-					print html
-					if re.search('<br>', html):
-						p = re.split(',\n<br>|<br>', html)
-					elif re.search('<br />', html):
-						p = re.split('<br />', p)
-
-					pp = []
-
-					for thing in p:
-						p1 = re.sub('\n', '', thing)
-						p2 = re.split(',', p1)
-
-						if p2 != ['']:
-							pp.append(p2)
-							# print '%s' % (p2)
-
-					if check == True:
-						h = l[0]
-
-						if len(pp[0]) == len(h[0]):
-							pp.pop(0)
-
-					else:
-						check = True
-					l.append(pp)
 		self.pparse(l)
 		# self.csvtool(l)
-							# print pp
-#This works with HTML directly from the weatherunderground historial page.
-#This will be used for daily, weekly, monthly and yearly formats
-#Currently it is configured for hourly, but this functionality has been depreciated since using CSV is much cleaner 
 
-	def getDataXML(self, check = False):
-		l
+	def xmlMaker(self, currentYear, currentMonth, currentDay):
+		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
+		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
+		# possible to implement geolookup here. 
+
+		#http://api.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MAS947&month=5&day=11&year=2012&format=XML !!!!!!!
+
+		if re.match('^\w{4}$', self.station):
+			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html?format=1' %(self.station, currentYear, currentMonth, currentDay)
+			data = self.getAirportData(urlbase)
+		else:
+			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s&format=XML' %(self.station, currentDay, currentYear, currentMonth)
+			data = self.getDataXML(urlbase)
+		return url, data
+
+
+	def getAirportData(self, url, check = False, l = [], i = 0):
+		while True:
+			try:
+				resp = urllib2.urlopen(url)
+				html = resp.read()
+				break
+			except:
+				i += i
+				print 'error with url - trying again %d' % (i)
+				if i == 5:
+					raise urllib.error.HTTPError
+		print html
+		if re.search('<br>', html):
+			p = re.split(',\n<br>|<br>', html)
+		elif re.search('<br />', html):
+			p = re.split('<br />', p)
+
+		pp = []
+
+		for thing in p:
+			p1 = re.sub('\n', '', thing)
+			p2 = re.split(',', p1)
+
+			if p2 != ['']:
+				pp.append(p2)
+				# print '%s' % (p2)
+
+		if check == True:
+			h = l[0]
+
+			if len(pp[0]) == len(h[0]):
+				pp.pop(0)
+
+		else:
+			check = True
+
+		l.append(pp)
+
+	def getDataPWSData(self, check = False): #for PWS with XML feed of data. <precip_today_metric> for rainfall
+		l=[]
+
+		if self.yearE == self.yearS:
+			yearsAll = [self.yearE]
+		else:
+			yearsAll = range(self.yearS, self.yearE + 1)
+
+		for year in yearsAll:
+			if self.operation == 'yearly':
+				print 'make yearly already...'
+#Make YEARLY
+			else:
+				if self.yearS == self.yearE:
+					monthsAll = range(self.monthS, self.monthE + 1)
+				elif year == self.yearE:
+					monthsAll = range(1, self.monthE + 1)
+				else: 
+					monthsAll = range(1, 13)
+
+				for month in monthsAll:
+
+					if self.operation == 'monthly':
+						print 'make monthly already...'
+
+#make monthly segment
+
+					else:
+						if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
+							daysAll = range(self.dayS, self.dayE + 1)
+						elif (year == self.yearE) and (month == self.monthE): #wrapping up
+							daysAll = range(1, self.dayE + 1)
+						else:
+							if month in [4, 6, 9, 11]:
+								daysAll = range(1,31)
+							elif month == 2:
+								daysAll = range(1,29)
+							else:
+								daysAll = range(1,32)
+								
+						for day in daysAll:
+							url = self.xmlMaker(year, month, day)
+							print "!URL: %s" % (url)
+
+							#go online
+							while True:
+								# try:
+								resp = urllib2.urlopen(url)
+								data = resp.read()
+								# print data
+								tree = ET.ElementTree(ET.fromstring(data))
+								##this is where you stopped. you are trying to parse a string in xml using ElementTree. You aren't sure if this is the best idea...
+								
+								l1 = []
+								l2 = []
+								for elm in tree.iter(): ##this is working
+									if check == False:
+										l1.append(elm.tag)
+										l2.append(elm.text)
+
+
+									print elm.tag
+									# print elm.text
+									
+
+									#Take weather sample either at the first or last point in an hour. Take total rainfall. 
+
 
 	def getData(self, check = False, l = []):
 		
@@ -424,8 +513,7 @@ if __name__ == '__main__':
 		saveLocation = '/Users/Stewart/.test/'
 		mode = 'first'
 
-	try:
-		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]), mode)
-	except NameError:
-		print "invalid option, see usage: \n "
-		op.print_usage()
+	# try:
+	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]), mode)
+	# except NameError:
+		# print NameError
