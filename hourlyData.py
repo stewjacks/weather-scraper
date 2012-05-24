@@ -17,6 +17,8 @@ import re
 import optparse
 
 import HTMLParser
+
+from metar import Metar
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -72,7 +74,97 @@ class hourlyData:
 		self.operation = operation
 		self.mode = mode
 
-		self.getDataXML()
+		self.metarParse('METAR CWTA 220800Z AUTO 22003KT 19/17 RMK AO1 2PAST HR 8010 SLP141 P0012 T01850169 50044', check = True)
+
+	def metarTest(self):
+		string = 'METAR CWTA 221000Z AUTO 19001KT 19/17 RMK AO1 6PAST HR 6007 SLP139 P0006 T01870172 50060'
+		# string = 'METAR CWTA 221100Z AUTO 19003KT M15/M17 RMK AO1 SLP334 T11461166 51010'
+		obs = Metar.Metar(string)
+		temp = re.search('-?(\d+\.\d+)', obs.temp.string("C"))
+		print temp.group(0)
+
+	def metarParse(self, code, check = False, results = []):
+#This needs to first navigate to CSV and check dates for overlaps, get metars from CSV, and put into new list
+
+		if check == False:
+			results.append(['Date UTC', 'Temperature (C)', 'Dew Point (C)', 'Wind', 'Peak Wind', 'Visibility', 'Pressure (hPa)', 'Precipitation (cm)', 'Present Weather', 'Sky Conditions', 'Observations', 'Report Type'])
+
+		# Initialize a Metar object with the coded report
+		obs = Metar.Metar(code)
+
+		# The 'station_id' attribute is a string.
+		# print obs.station_id
+		l = []
+		# The 'time' attribute is a datetime object
+		if obs.time:
+			l.append(obs.time.ctime())
+		else: l.append('')
+
+		# The 'temp' and 'dewpt' attributes are temperature objects
+		if obs.temp:
+			temp = re.search('-?(\d+\.\d+)', obs.temp.string("C"))
+			l.append(temp.group(0))
+		else: l.append('')
+
+		if obs.dewpt:
+			temp = re.search('-?(\d+\.\d+)', obs.dewpt.string("C"))
+			l.append(temp.group(0))
+		else: l.append('')
+
+		# The wind() method returns a string describing wind observations
+		# which may include speed, direction, variability and gusts.
+		if obs.wind_speed:
+			l.append(obs.wind())
+		else: l.append('')
+		
+		# The peak_wind() method returns a string describing the peak wind 
+		# speed and direction.
+		if obs.wind_speed_peak:
+			l.append(obs.peak_wind())
+		else: l.append('')
+		
+		# The visibility() method summarizes the visibility observation.
+		if obs.vis:
+			l.append(obs.visibility())
+		else: l.append('')
+		
+		# The 'press' attribute is a pressure object.
+		if obs.press:
+			temp = re.search('(\d+\.\d+)', obs.press.string("hPa"))
+			l.append(temp.group(0))
+		else: l.append('')
+		
+		# The 'precip_1hr' attribute is a precipitation object.
+		if obs.precip_1hr:
+			temp = re.search('(\d*\.*\d*)', obs.precip_1hr.string("cm"))
+			l.append(temp.group(0))
+		else: l.append('')
+		
+		# The present_weather() method summarizes the weather description (rain, etc.)
+		if obs.present_weather:
+			l.append(obs.present_weather())
+		else: l.append('')
+		
+		# The sky_conditions() method summarizes the cloud-cover observations.			
+		if obs.sky_conditions:
+			l.append(obs.sky_conditions())
+		else: l.append('')
+		
+		# The remarks() method describes the remark groups that were parsed, but 
+		# are not available directly as Metar attributes.  The precipitation, 
+		# min/max temperature and peak wind remarks, for instance, are stored as
+		# attributes and won't be listed here.
+		if obs._remarks:
+		  l.append(obs.remarks())
+		else: l.append('')
+		
+		if obs.type:
+		  l.append(obs.report_type())
+		else: l.append('')
+
+		results.append(l)
+		print results
+		
 
 	def urlMaker(self, currentYear, currentMonth, currentDay):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
@@ -143,7 +235,8 @@ class hourlyData:
 		return url, data
 
 
-	def getAirportData(self, url, check = False, l = [], i = 0):
+	def getAirportData(self, url, check = False, l = [], i = 0): ##MAKE Hourly true
+	##parse METAR/SPECI
 		while True:
 			try:
 				resp = urllib2.urlopen(url)
