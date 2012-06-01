@@ -10,7 +10,8 @@ Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 
 import sys
 import os
-import urllib2
+import datetime
+import urllib2, cookielib
 import csv
 import socket
 import re
@@ -73,97 +74,125 @@ class hourlyData:
 		self.dayE = dayE
 		self.operation = operation
 		self.mode = mode
+		self.check = False
 
-		self.metarParse('METAR CWTA 220800Z AUTO 22003KT 19/17 RMK AO1 2PAST HR 8010 SLP141 P0012 T01850169 50044', check = True)
+		# self.getData1()
+		# self.metarParse(['METAR CWTA 250500Z AUTO 15004KT M18/M24 RMK AO1 SLP263 T11771242 58030'], check = True)
+		self.getData1()
 
 	def metarTest(self):
-		string = 'METAR CWTA 221000Z AUTO 19001KT 19/17 RMK AO1 6PAST HR 6007 SLP139 P0006 T01870172 50060'
-		# string = 'METAR CWTA 221100Z AUTO 19003KT M15/M17 RMK AO1 SLP334 T11461166 51010'
-		obs = Metar.Metar(string)
-		temp = re.search('-?(\d+\.\d+)', obs.temp.string("C"))
-		print temp.group(0)
-
-	def metarParse(self, code, check = False, results = []):
-#This needs to first navigate to CSV and check dates for overlaps, get metars from CSV, and put into new list
-
-		if check == False:
-			results.append(['Date UTC', 'Temperature (C)', 'Dew Point (C)', 'Wind', 'Peak Wind', 'Visibility', 'Pressure (hPa)', 'Precipitation (cm)', 'Present Weather', 'Sky Conditions', 'Observations', 'Report Type'])
-
-		# Initialize a Metar object with the coded report
-		obs = Metar.Metar(code)
-
-		# The 'station_id' attribute is a string.
-		# print obs.station_id
 		l = []
-		# The 'time' attribute is a datetime object
-		if obs.time:
-			l.append(obs.time.ctime())
-		else: l.append('')
 
-		# The 'temp' and 'dewpt' attributes are temperature objects
-		if obs.temp:
-			temp = re.search('-?(\d+\.\d+)', obs.temp.string("C"))
-			l.append(temp.group(0))
-		else: l.append('')
+		print l
 
-		if obs.dewpt:
-			temp = re.search('-?(\d+\.\d+)', obs.dewpt.string("C"))
-			l.append(temp.group(0))
-		else: l.append('')
+	def metarParse(self, list1, check): #This takes a METAR code list and outputs a nice list of data. Mostly taken from example in Metar
+		results = []
+		if self.check == False:
+			results.append(['Date UTC', 'Temperature (C)', 'Dew Point (C)', 'Wind Speed (km/h)', 'Wind Direction (deg)', 'Peak Wind', 'Visibility', 'Pressure (hPa)', 'Precipitation (cm)', 'Present Weather', 'Sky Conditions', 'Observations', 'Report Type'])
+			self.check = True
+		tempHour = None
+		for code in list1: 
+			print 'metar: %s \n' %(code)
+		# Initialize a Metar object with the coded report
+			obs = Metar.Metar(code)
+			print "String:"
+			print obs.string()
+			print '\n'
 
-		# The wind() method returns a string describing wind observations
-		# which may include speed, direction, variability and gusts.
-		if obs.wind_speed:
-			l.append(obs.wind())
-		else: l.append('')
-		
-		# The peak_wind() method returns a string describing the peak wind 
-		# speed and direction.
-		if obs.wind_speed_peak:
-			l.append(obs.peak_wind())
-		else: l.append('')
-		
-		# The visibility() method summarizes the visibility observation.
-		if obs.vis:
-			l.append(obs.visibility())
-		else: l.append('')
-		
-		# The 'press' attribute is a pressure object.
-		if obs.press:
-			temp = re.search('(\d+\.\d+)', obs.press.string("hPa"))
-			l.append(temp.group(0))
-		else: l.append('')
-		
-		# The 'precip_1hr' attribute is a precipitation object.
-		if obs.precip_1hr:
-			temp = re.search('(\d*\.*\d*)', obs.precip_1hr.string("cm"))
-			l.append(temp.group(0))
-		else: l.append('')
-		
-		# The present_weather() method summarizes the weather description (rain, etc.)
-		if obs.present_weather:
-			l.append(obs.present_weather())
-		else: l.append('')
-		
-		# The sky_conditions() method summarizes the cloud-cover observations.			
-		if obs.sky_conditions:
-			l.append(obs.sky_conditions())
-		else: l.append('')
-		
-		# The remarks() method describes the remark groups that were parsed, but 
-		# are not available directly as Metar attributes.  The precipitation, 
-		# min/max temperature and peak wind remarks, for instance, are stored as
-		# attributes and won't be listed here.
-		if obs._remarks:
-		  l.append(obs.remarks())
-		else: l.append('')
-		
-		if obs.type:
-		  l.append(obs.report_type())
-		else: l.append('')
+			# The 'station_id' attribute is a string.
+			# print obs.station_id
+			l = []
+			# The 'time' attribute is a datetime object
+			hour = obs._hour
+			
+			if tempHour is not None: 
+				if (tempHour + 1) != hour:
+					for x in range(tempHour + 1 ,hour):
+						date = datetime.datetime(obs._year, obs._month, obs._day, x, obs._min)
+						results.append([date])
 
-		results.append(l)
-		print results
+
+			if obs.time:
+				l.append(obs.time.ctime())
+			else: l.append('')
+			print "temp: "
+
+			print obs.temp
+			print '\n'
+
+			# The 'temp' and 'dewpt' attributes are temperature objects
+			if obs.temp:
+				temp = re.search('-?(\d+\.\d+)', obs.temp.string("F"))
+				l.append(temp.group(0))
+			else: l.append('')
+
+			if obs.dewpt:
+				temp = re.search('-?(\d+\.\d+)', obs.dewpt.string("C"))
+				l.append(temp.group(0))
+			else: l.append('')
+
+			# The wind() method returns a string describing wind observations
+			# which may include speed, direction, variability and gusts.
+			if obs.wind_speed:
+				temp = re.search('\d+', obs.wind_speed.string("KMH"))
+				l.append(temp.group(0))
+			else: l.append('')
+
+			if obs.wind_dir:
+				temp = re.search('\d+', obs.wind_dir.string())
+				l.append(temp.group(0))
+			else: l.append('')
+			
+			# The peak_wind() method returns a string describing the peak wind 
+			# speed and direction.
+			if obs.wind_speed_peak:
+				l.append(obs.peak_wind())
+			else: l.append('')
+			
+			# The visibility() method summarizes the visibility observation.
+			if obs.vis:
+				l.append(obs.visibility())
+			else: l.append('')
+			
+			# The 'press' attribute is a pressure object.
+			if obs.press:
+				temp = re.search('(\d+\.\d+)', obs.press.string("hPa"))
+				l.append(temp.group(0))
+			else: l.append('')
+			
+			# The 'precip_1hr' attribute is a precipitation object.
+			if obs.precip_1hr:
+				temp = re.search('(\d*\.*\d*)', obs.precip_1hr.string("cm"))
+				l.append(temp.group(0))
+			else: l.append('')
+			
+			# The present_weather() method summarizes the weather description (rain, etc.)
+			if obs.present_weather:
+				l.append(obs.present_weather())
+			else: l.append('')
+			
+			# The sky_conditions() method summarizes the cloud-cover observations.			
+			if obs.sky_conditions:
+				l.append(obs.sky_conditions())
+			else: l.append('')
+			
+			# The remarks() method describes the remark groups that were parsed, but 
+			# are not available directly as Metar attributes.  The precipitation, 
+			# min/max temperature and peak wind remarks, for instance, are stored as
+			# attributes and won't be listed here.
+			if obs._remarks:
+			  l.append(obs.remarks())
+			else: l.append('')
+			
+			if obs.type:
+			  l.append(obs.report_type())
+			else: l.append('')
+
+			results.append(l)
+			print l
+			print "\n*******************\n"
+
+		return results
 		
 
 	def urlMaker(self, currentYear, currentMonth, currentDay):
@@ -179,8 +208,7 @@ class hourlyData:
 			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s&format=1' %(self.station, currentDay, currentYear, currentMonth)
 		return urlbase
 
-	def getData1(self, check = False):
-		l = []
+	def getData1(self, l = []):
 		check = False
 		if self.yearE == self.yearS:
 			yearsAll = [self.yearE]
@@ -201,6 +229,14 @@ class hourlyData:
 
 				if (self.yearS == self.yearE) and (self.monthS == self.monthE): #we're looking at dates in one month
 					daysAll = range(self.dayS, self.dayE + 1)
+				elif (year == self.yearS) and (month == self.monthS):
+					if month in [4, 6, 9, 11]:
+						daysAll = range(self.dayS,31)
+					elif month == 2:
+						daysAll = range(self.dayS,29)
+					else:
+						daysAll = range(self.dayS,32)
+
 				elif (year == self.yearE) and (month == self.monthE): #wrapping up
 					daysAll = range(1, self.dayE + 1)
 				else:
@@ -212,67 +248,178 @@ class hourlyData:
 						daysAll = range(1,32)
 						
 				for day in daysAll:
-					(url, data) = self.xmlMaker(year, month, day)
-					print "!URL: %s" % (url)
-					l.append(data)
-					
-		self.pparse(l)
-		# self.csvtool(l)
+					l += self.xmlMaker(year, month, day)
+			
+			print "l: "
+			print l
+			print "\n"
+		# self.pparse(l)
 
-	def xmlMaker(self, currentYear, currentMonth, currentDay):
+		# print l
+		self.csvtool(l)
+
+	def xmlMaker(self, currentYear, currentMonth, currentDay, data = []):
 		#http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MD7696&day=1&year=2012&month=5
 		#http://www.wunderground.com/history/airport/CWTA/2012/05/02/DailyHistory.html
 		# possible to implement geolookup here. 
 
 		#http://api.wunderground.com/weatherstation/WXDailyHistory.asp?ID=MAS947&month=5&day=11&year=2012&format=XML !!!!!!!
-
+		data = []
 		if re.match('^\w{4}$', self.station):
 			urlbase = 'http://www.wunderground.com/history/airport/%s/%s/%s/%s/DailyHistory.html?format=1' %(self.station, currentYear, currentMonth, currentDay)
-			data = self.getAirportData(urlbase)
+			results = self.getAirportData(urlbase)
+			# print "results: "
+			# print results
+			# print "\n"
+
 		else:
 			urlbase = 'http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=%s&day=%s&year=%s&month=%s&format=XML' %(self.station, currentDay, currentYear, currentMonth)
-			data = self.getDataXML(urlbase)
-		return url, data
+			results = self.getDataPWSData(urlbase)
+			for item in results:
+				data.append(item)
+
+		return results
 
 
-	def getAirportData(self, url, check = False, l = [], i = 0): ##MAKE Hourly true
+	def getAirportData(self, url, check = False, l = [], i = 0, source = "csv"): ##MAKE Hourly true
 	##parse METAR/SPECI
+
+		cookieJar = cookielib.CookieJar()
+		opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
+		setmetar = 'http://www.wunderground.com/cgi-bin/findweather/getForecast?setpref=SHOWMETAR&value=1'
+		
+		request = urllib2.Request(setmetar)
+		response = opener.open(request)
+
 		while True:
 			try:
-				resp = urllib2.urlopen(url)
-				html = resp.read()
+				request = urllib2.Request(url)
+				page = opener.open(request)
+				data = page.read()
 				break
 			except:
 				i += i
-				print 'error with url - trying again %d' % (i)
+				print '%d - error with url - trying again \n' % (i)
 				if i == 5:
 					raise urllib.error.HTTPError
-		print html
-		if re.search('<br>', html):
-			p = re.split(',\n<br>|<br>', html)
-		elif re.search('<br />', html):
-			p = re.split('<br />', p)
+		# print data
+		p = re.split('<br />', data)
 
 		pp = []
+		p2 = []
 
-		for thing in p:
+		for thing in p: #do this with regex for speed later
 			p1 = re.sub('\n', '', thing)
-			p2 = re.split(',', p1)
+			p1 = re.split(',', p1)
 
-			if p2 != ['']:
-				pp.append(p2)
-				# print '%s' % (p2)
+			if p1 != ['']:
+				pp.append(p1)
 
-		if check == True:
-			h = l[0]
-
-			if len(pp[0]) == len(h[0]):
+		if source == 'csv':
+			metar = pp[0].index('FullMetar')
+			if check == False:
 				pp.pop(0)
 
-		else:
-			check = True
+			timeOld = None
+			log = []
 
-		l.append(pp)
+			for row in pp:
+				data = []
+				if not (re.match('AAXX', row[metar])): #get rid of the 6 hour stamps
+					
+					time = re.split(":", row[0])
+
+
+						
+
+					if timeOld is None:
+						if int(time[0]) != 12:
+							p2.append(['12:00 AM'])
+							for x in range(1, int(time[0])):
+								timestr = '%d:%s' %(x, time[1])
+								p2.append([timestr])
+						p2.append(row)
+
+					elif (int(time[0]) == (int(timeOld[0])+1)) or ((int(time[0]) == 1) and (int(timeOld[0]) == 12)): #append the first row that is one hour ahead of previous row
+
+						if not ((int(time[0]) == 12) and re.search("AM", time[1])):
+							p2.append(row)
+					elif (int(time[0]) > int(timeOld[0]) + 1) or (int(time[0]) < int(timeOld[0])):
+
+						if ((re.search('AM', timeOld[1])) and (re.search('AM', time[1]))) or ((re.search('PM', timeOld[1])) and (re.search('PM', time[1]))):
+							if int(time[0]) < int(timeOld[0]):
+								for x in range(1, int(time[0])):
+									timestr = '%d:%s' %(x, time[1])
+									p2.append([timestr])
+
+							for x in range((int(timeOld[0]) + 1), int(time[0])):
+								timestr = '%d:%s' %(x, time[1])
+								p2.append([timestr])
+							p2.append(row)
+
+						elif (re.search('AM', timeOld[1])) and (re.search('PM', time[1])):
+							
+							for x in range((int(timeOld[0]) + 1), 12):
+								timestr = '%d:%s' %(x, timeOld[1])
+								p2.append([timestr])
+							
+							if int(time[0]) != 12:
+								timestr = '%d:%s' %(12, time[1])
+								p2.append([timestr])
+								for x in range(1, int(time[0])):
+									timestr = '%d:%s' %(x, time[1])
+									p2.append([timestr])
+							
+							p2.append(row)
+					log.append(time)
+					log.append(timeOld)
+
+					timeOld = time
+			if int(timeOld[0]) < 11 and len(p2) != 24:
+				for x in range(int(timeOld[0]) + 1, 12):
+					timestr = '%d:%s' %(x, timeOld[1])
+					p2.append([timestr])
+
+			#confirmation of data
+			if len(p2) != 24:
+				for row in log:
+					print row
+				for row in p2:
+					print row
+					print '\n'
+
+				print 'length of p2:'
+				print len(p2)
+				# print p2
+			return p2
+
+
+
+		elif source == "metar":
+			metar = pp[0].index('FullMetar')
+			pp.pop(0)
+
+			p2 = []
+
+			timeOld = [None]
+			for row in pp:
+				if re.match('AAXX', row[metar]): #get rid of the 6 hour stamps
+					print 'skipped AAXX'
+					print "\n*******************\n"
+				else: #Make hourly
+					time = re.split("[A,P,M,:]+", row[0])
+					if (time[0] != timeOld[0]):
+						p2.append(row[metar])
+					timeOld = time
+
+			temp = self.metarParse(p2, check)
+		
+			print "temp: "
+			print temp
+			print "\n"
+			# p1 += temp 
+			return temp
+
 
 	def getDataPWSData(self, check = False): #for PWS with XML feed of data. <precip_today_metric> for rainfall
 		l=[]
@@ -442,7 +589,7 @@ class hourlyData:
 		datestring = "%s--%s-%s-%s--%s-%s-%s" % (self.station, self.yearS, self.monthS, self.dayS, self.yearE, self.monthE, self.dayE)
 		print "!Datestring: %s" % (datestring)
 		# filename = self.dest + datestring + '.csv'
-		filename = str(self.station + '.csv')
+		filename = str(datestring + '.csv')
 		print "!Destination: %s" % (filename)
 
 		# file(filename)
@@ -451,10 +598,7 @@ class hourlyData:
 		write = csv.writer(FILE, delimiter=',', quoting=csv.QUOTE_ALL)
 
 		for line in list1:
-			for l1 in line:
-				# print l1
-				# print "*******"
-				write.writerow(l1)
+			write.writerow(line)
 
 	def pparse(self, list1, count = 0, hOld = '', listTemp = []): #THIS DOES NOT WORK!!!!!!!
 		s = list1[0]
@@ -584,7 +728,7 @@ if __name__ == '__main__':
 	if args[0] in ['hourly', 'daily', 'weekly', 'monthly', 'yearly']:
 		while True:
 			try:
-				mode = str(raw_input('Style of parsing (first, last, or blank for all) \name'))
+				mode = str(raw_input('Style of parsing (first, last, or blank for all) \n'))
 				break
 			except ValueError: 
 				print 'invalid mode choice'
@@ -595,18 +739,24 @@ if __name__ == '__main__':
 			except ValueError: #create regex/sys to make sure this matches a directory location
 				print 'invalid location'
 
+		data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]), mode)
+
 	elif args[0] == 'debug':
-		name = 'IQCMONTR7'
-		yearS = 2011
+		name = 'CYUL'
+		yearS = 2008	
 		monthS = 1
-		dayS = 1
+		dayS = 1	
 		yearE = 2011
-		monthE = 1
-		dayE = 3
+		monthE = 12
+		dayE = 31
 		saveLocation = '/Users/Stewart/.test/'
 		mode = 'first'
 
+		for year in range(yearS, yearE+1):
+			data = hourlyData(saveLocation, name, year, monthS, dayS, year, monthE, dayE, str(args[0]), mode)
+
+
 	# try:
-	data = hourlyData(saveLocation, name, yearS, monthS, dayS, yearE, monthE, dayE, str(args[0]), mode)
+	
 	# except NameError:
 		# print NameError
